@@ -16,9 +16,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class Solicitud {
-    private String idSolicitud;
     private BigDecimal monto;
-    private String plazo;
+    private Integer plazo;
     private String email;
     private Estado estado;
     private TipoPrestamo tipoPrestamo;
