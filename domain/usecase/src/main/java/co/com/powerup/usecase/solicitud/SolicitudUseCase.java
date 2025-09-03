@@ -17,27 +17,15 @@ public class SolicitudUseCase {
 
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
         return SolicitudValidator.validate(solicitud)
-                .switchIfEmpty(
-                        tipoPrestamoRepository
-                                .findById(solicitud.getTipoPrestamo()
-                                        .getIdTipoPrestamo())
-                                .switchIfEmpty(Mono.error(new RuntimeException(
-                                        "El tipo de prestamo no existe")))
-                                .map(tipoPrestamo -> solicitud.toBuilder()
-                                        .tipoPrestamo(tipoPrestamo).build())
-                                .flatMap(solicitudConTipoPrestamo -> estadoRepository
-                                        .findById(solicitudConTipoPrestamo
-                                                .getEstado()
-                                                .getIdEstado())
-                                        .switchIfEmpty(Mono.error(
-                                                new RuntimeException(
-                                                        "El estado no existe")))
-                                        .map(estado -> solicitudConTipoPrestamo
-                                                .toBuilder()
-                                                .estado(estado)
-                                                .build()))
-                                .flatMap(solicitudConTipoPrestamo -> solicitudRepository
-                                        .save(solicitudConTipoPrestamo)));
+                .flatMap(validSolicitud -> tipoPrestamoRepository
+                        .findById(validSolicitud.getTipoPrestamo().getIdTipoPrestamo())
+                        .switchIfEmpty(Mono.error(new RuntimeException("El tipo de prestamo no existe")))
+                        .map(tipoPrestamo -> validSolicitud.toBuilder().tipoPrestamo(tipoPrestamo).build())
+                        .flatMap(solicitudConTipoPrestamo -> estadoRepository
+                                .findById(solicitudConTipoPrestamo.getEstado().getIdEstado())
+                                .switchIfEmpty(Mono.error(new RuntimeException("El estado no existe")))
+                                .map(estado -> solicitudConTipoPrestamo.toBuilder().estado(estado).build()))
+                        .flatMap(solicitudFinal -> solicitudRepository.save(solicitudFinal)));
     }
 
 }

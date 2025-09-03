@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Table("estados.estado")
+@Table("solicitud.tipo_prestamo")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

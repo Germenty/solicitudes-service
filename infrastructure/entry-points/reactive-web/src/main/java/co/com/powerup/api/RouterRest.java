@@ -14,7 +14,7 @@ public class RouterRest {
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route()
                 // POST /api/v1/solicitudes
-                .POST("/api/v1/solicitudes", handler::createSolicitud)
+                .POST("/api/v1/solicitud", handler::createSolicitud)
                 .build();
     }
 }

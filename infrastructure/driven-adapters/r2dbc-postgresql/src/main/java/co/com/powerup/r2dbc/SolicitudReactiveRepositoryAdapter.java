@@ -16,7 +16,8 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public class SolicitudReactiveRepositoryAdapter
-        extends ReactiveAdapterOperations<Solicitud, SolicitudEntity, Long, SolicitudReactiveRepository> implements SolicitudRepository {
+        extends ReactiveAdapterOperations<Solicitud, SolicitudEntity, Long, SolicitudReactiveRepository>
+        implements SolicitudRepository {
 
     private static final Logger log = LoggerFactory.getLogger(SolicitudReactiveRepositoryAdapter.class);
 
@@ -28,7 +29,12 @@ public class SolicitudReactiveRepositoryAdapter
 
     @Override
     public Mono<Solicitud> save(Solicitud solicitud) {
-        log.info("Saving solicitud: {}", solicitud);
+        log.info("Persistiendo solicitud: email={}, monto={}, plazo={}, estado={}, tipoPrestamo={}",
+                solicitud.getEmail(),
+                solicitud.getMonto(),
+                solicitud.getPlazo(),
+                solicitud.getEstado() != null ? solicitud.getEstado().getIdEstado() : "null",
+                solicitud.getTipoPrestamo() != null ? solicitud.getTipoPrestamo().getIdTipoPrestamo() : "null");
 
         SolicitudEntity solicitudEntity = maptoEntity(solicitud);
         return repository.save(solicitudEntity)
@@ -65,7 +71,7 @@ public class SolicitudReactiveRepositoryAdapter
         SolicitudEntity solicitudEntity = new SolicitudEntity();
         solicitudEntity.setMonto(solicitud.getMonto());
         solicitudEntity.setPlazo(solicitud.getPlazo());
-        solicitudEntity.setEmail(null);
+        solicitudEntity.setEmail(solicitud.getEmail());
         if (solicitud.getEstado() != null) {
             solicitudEntity.setIdEstado(Long.valueOf(solicitud.getEstado().getIdEstado()));
         }
