@@ -18,18 +18,17 @@ public class UserRestConsumer implements UserRepository {
         return webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/user/{email}")
-                        .build(email))
+                        .path("/api/v1/users")
+                        .queryParam("email", email)
+                        .build())
                 .headers(headers -> headers.setBearerAuth(token))
                 .retrieve()
                 .onStatus(
                         status -> status.is4xxClientError(),
-                        response -> Mono.error(new RuntimeException("User not found with email: " + email))
-                )
+                        response -> Mono.error(new RuntimeException("User not found with email: " + email)))
                 .onStatus(
                         status -> status.is5xxServerError(),
-                        response -> Mono.error(new RuntimeException("Server error while fetching user: " + email))
-                )
+                        response -> Mono.error(new RuntimeException("Server error while fetching user: " + email)))
                 .bodyToMono(User.class);
     }
 }
