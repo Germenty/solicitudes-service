@@ -19,6 +19,7 @@ Generar Modelos
 gradle gm --name Solicitud
 gradle gm --name TipoPrestamo  
 gradle gm --name Estado
+gradle gm --name User
 
 
 Generar Use Case

@@ -31,6 +31,12 @@ adapters:
     username: "postgres"
     password: "123456789"
 
+adapter:
+  restconsumer:
+    url: http://localhost:8080
+    timeout: 5000
+
+
 # adapters:
 #   r2dbc:
 #     host: ${DB_HOST:localhost}

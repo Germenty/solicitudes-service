@@ -24,11 +24,19 @@ public class Handler {
 
     // POST /api/v1/solicitud
     public Mono<ServerResponse> createSolicitud(ServerRequest request) {
+        // 0. Extraer token de Authorization header
+        String token = request.headers().firstHeader("Authorization");
+        if (token == null || token.isBlank()) {
+            return ServerResponse.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("error", "Authorization header is required"));
+        }
+
         return request
                 .bodyToMono(RegisterSolicitudRequest.class)
 
                 // 1. Mapear DTO → Dominio
-                .map((RegisterSolicitudRequest dto) -> Solicitud.builder()
+                .map(dto -> Solicitud.builder()
                         .monto(dto.monto())
                         .plazo(dto.plazo())
                         .email(dto.email())
@@ -40,8 +48,8 @@ public class Handler {
                                 .build())
                         .build())
 
-                // 2. Ejecutar caso de uso
-                .flatMap(solicitudUseCase::createSolicitud)
+                // 2. Ejecutar caso de uso con el token
+                .flatMap(solicitud -> solicitudUseCase.createSolicitud(solicitud, token))
 
                 // 3. Responder con 201 Created
                 .flatMap(saved -> ServerResponse.created(
@@ -51,6 +59,9 @@ public class Handler {
 
                 // 4. Manejo de errores de negocio
                 .onErrorResume(IllegalArgumentException.class, ex -> ServerResponse.badRequest()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(Map.of("error", ex.getMessage())))
+                .onErrorResume(RuntimeException.class, ex -> ServerResponse.status(500)
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(Map.of("error", ex.getMessage())));
     }
