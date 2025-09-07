@@ -1,6 +1,7 @@
 package co.com.powerup.usecase.solicitud;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 import java.math.BigDecimal;
@@ -20,6 +21,8 @@ import co.com.powerup.model.solicitud.Solicitud;
 import co.com.powerup.model.solicitud.gateways.SolicitudRepository;
 import co.com.powerup.model.tipoprestamo.TipoPrestamo;
 import co.com.powerup.model.tipoprestamo.gateways.TipoPrestamoRepository;
+import co.com.powerup.model.user.User;
+import co.com.powerup.model.user.gateways.UserRepository;
 import co.com.powerup.usecase.solicitud.validation.SolicitudValidator;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -36,12 +39,18 @@ class SolicitudUseCaseTest {
     @Mock
     private EstadoRepository estadoRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private SolicitudUseCase solicitudUseCase;
 
     private Solicitud solicitudBase;
     private TipoPrestamo tipoPrestamoCompleto;
     private Estado estadoCompleto;
+    private User userValido;
+
+    private final String token = "dummy-token";
 
     @BeforeEach
     void setUp() {
@@ -67,11 +76,17 @@ class SolicitudUseCaseTest {
                 .tipoPrestamo(TipoPrestamo.builder().idTipoPrestamo("1").build())
                 .estado(Estado.builder().idEstado("2").build())
                 .build();
+
+        userValido = User.builder()
+                .email("cliente@correo.com")
+                .build();
     }
 
     // ✅ Caso exitoso
     @Test
     void whenCreateSolicitudWithValidData_thenReturnsSavedSolicitud() {
+        given(userRepository.findByEmail(eq("cliente@correo.com"), eq(token)))
+                .willReturn(Mono.just(userValido));
         given(tipoPrestamoRepository.findById("1"))
                 .willReturn(Mono.just(tipoPrestamoCompleto));
         given(estadoRepository.findById("2"))
@@ -82,7 +97,7 @@ class SolicitudUseCaseTest {
                         .estado(estadoCompleto)
                         .build()));
 
-        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase))
+        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase, token))
                 .expectNextMatches(s -> s.getEmail().equals("cliente@correo.com")
                         && s.getTipoPrestamo().getNombre().equals("Consumo")
                         && s.getEstado().getNombre().equals("Pendiente"))
@@ -92,24 +107,28 @@ class SolicitudUseCaseTest {
     // ❌ Tipo de préstamo no existe
     @Test
     void whenTipoPrestamoNotFound_thenThrowsException() {
+        given(userRepository.findByEmail(eq("cliente@correo.com"), eq(token)))
+                .willReturn(Mono.just(userValido));
         given(tipoPrestamoRepository.findById("1"))
                 .willReturn(Mono.empty());
 
-        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase))
+        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase, token))
                 .expectErrorMatches(ex -> ex instanceof RuntimeException &&
-                        ex.getMessage().equals("El tipo de prestamo no existe"))
+                        ex.getMessage().equals("El tipo de préstamo no existe"))
                 .verify();
     }
 
     // ❌ Estado no existe
     @Test
     void whenEstadoNotFound_thenThrowsException() {
+        given(userRepository.findByEmail(eq("cliente@correo.com"), eq(token)))
+                .willReturn(Mono.just(userValido));
         given(tipoPrestamoRepository.findById("1"))
                 .willReturn(Mono.just(tipoPrestamoCompleto));
         given(estadoRepository.findById("2"))
                 .willReturn(Mono.empty());
 
-        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase))
+        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase, token))
                 .expectErrorMatches(ex -> ex instanceof RuntimeException &&
                         ex.getMessage().equals("El estado no existe"))
                 .verify();
@@ -126,10 +145,34 @@ class SolicitudUseCaseTest {
             mockedValidator.when(() -> SolicitudValidator.validate(any(Solicitud.class)))
                     .thenReturn(Mono.empty());
 
-            StepVerifier.create(solicitudUseCase.createSolicitud(solicitudInvalida))
+            StepVerifier.create(solicitudUseCase.createSolicitud(solicitudInvalida, token))
                     .expectComplete()
                     .verify();
         }
     }
 
+    // ❌ Email nulo
+    @Test
+    void whenEmailIsNull_thenThrowsException() {
+        Solicitud solicitudSinEmail = solicitudBase.toBuilder()
+                .email(null)
+                .build();
+
+        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudSinEmail, token))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException &&
+                        ex.getMessage().equals("El email es obligatorio"))
+                .verify();
+    }
+
+    // ❌ Usuario no encontrado
+    @Test
+    void whenUserNotFound_thenThrowsException() {
+        given(userRepository.findByEmail(eq("cliente@correo.com"), eq(token)))
+                .willReturn(Mono.empty());
+
+        StepVerifier.create(solicitudUseCase.createSolicitud(solicitudBase, token))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException &&
+                        ex.getMessage().equals("El usuario con email cliente@correo.com no existe"))
+                .verify();
+    }
 }

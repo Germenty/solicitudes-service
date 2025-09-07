@@ -1,3 +1,101 @@
 dependencies {
     implementation project(':model')
+
+    // Testing dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.assertj:assertj-core'
+    
+    // Test utilities
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Configuración específica para tests reactivos
+    systemProperty 'reactor.trace.cancel', 'true'
+    systemProperty 'reactor.trace.nocapacity', 'true'
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
+    
+    // Reportes de cobertura
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.8"
+}
+
+jacocoTestReport {
+    dependsOn test
+    
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/constants/**',
+                '**/config/**',
+                '**/dto/**',
+                '**/*Application.class',
+                '**/*Config.class'
+            ])
+        }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80 // 80% de cobertura mínima
+            }
+        }
+        
+        rule {
+            enabled = true
+            element = 'CLASS'
+            
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.75
+            }
+            
+            excludes = [
+                '*.constants.*',
+                '*.config.*',
+                '*.dto.*',
+                '*Application',
+                '*Config'
+            ]
+        }
+    }
+}
+
+// Task personalizado para ejecutar tests con cobertura
+task testWithCoverage {
+    group = 'verification'
+    description = 'Runs tests and generates coverage report'
+    dependsOn test, jacocoTestReport, jacocoTestCoverageVerification
+    
+    doLast {
+        println "✅ Tests ejecutados con cobertura para módulo usecase"
+        println "📊 Reporte disponible en: build/reports/jacoco/test/html/index.html"
+    }
 }
