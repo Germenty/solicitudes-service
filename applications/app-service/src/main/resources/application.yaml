@@ -1,16 +1,14 @@
 server:
-  port: 8080
+  port: 8081
+
 spring:
   application:
     name: "solicitudes-service"
-  devtools:
-    add-properties: false
   h2:
     console:
       enabled: true
       path: "/h2"
-  profiles:
-    include: null
+
 management:
   endpoints:
     web:
@@ -20,5 +18,34 @@ management:
     health:
       probes:
         enabled: true
+
 cors:
-  allowed-origins: "http://localhost:4200,http://localhost:8080"
+  allowed-origins: "http://localhost:4200,http://localhost:8081"
+
+adapters:
+  r2dbc:
+    host: "localhost"
+    port: 5432
+    database: "powerup"
+    schema: "public"
+    username: "postgres"
+    password: "123456789"
+
+adapter:
+  restconsumer:
+    url: http://localhost:8080
+    timeout: 5000
+
+# adapters:
+#   r2dbc:
+#     host: ${DB_HOST:localhost}
+#     port: ${DB_PORT:5432}
+#     database: ${DB_NAME:powerup}
+#     schema: ${DB_SCHEMA:public}
+#     username: ${DB_USER:postgres}
+#     password: ${DB_PASSWORD:123456789}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /v3/api-docs
