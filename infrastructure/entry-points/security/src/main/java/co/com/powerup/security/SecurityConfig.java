@@ -45,10 +45,10 @@ public class SecurityConfig {
                         .permitAll()
 
                         // HU2: Registrar solicitud (solo CLIENT)
-                        .pathMatchers(HttpMethod.POST, "/api/v1/solicitud").hasRole("CLIENT")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/solicitud").hasAnyRole("CLIENT", "ADMIN")
 
                         // HU4: Listar solicitudes (solo ADVISOR)
-                        .pathMatchers(HttpMethod.GET, "/api/v1/solicitud").hasRole("ADVISOR")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/solicitud").hasAnyRole("ADMIN", "ADVISOR")
 
                         // HU6: Aprobar/Rechazar solicitud (solo ADVISOR)
                         .pathMatchers(HttpMethod.PUT, "/api/v1/solicitud/**").hasRole("ADVISOR")

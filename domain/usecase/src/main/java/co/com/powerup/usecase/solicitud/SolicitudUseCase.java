@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+import co.com.powerup.model.estado.Estado;
 import co.com.powerup.model.estado.gateways.EstadoRepository;
-import co.com.powerup.model.jwt.gateways.JWTRepository;
 import co.com.powerup.model.solicitud.Solicitud;
 import co.com.powerup.model.solicitud.SolicitudFilter;
 import co.com.powerup.model.solicitud.SolicitudPageResponse;
@@ -26,7 +26,6 @@ public class SolicitudUseCase {
     private final TipoPrestamoRepository tipoPrestamoRepository;
     private final EstadoRepository estadoRepository;
     private final UserRepository userRepository;
-    private final JWTRepository jwtRepository;
 
     public Mono<Solicitud> createSolicitud(Solicitud solicitud, String token) {
         return SolicitudValidator.validate(solicitud)
@@ -62,19 +61,32 @@ public class SolicitudUseCase {
                     long total = tuple.getT2();
 
                     return Flux.fromIterable(solicitudes)
-                            .flatMap(s -> userRepository.findByEmail(s.getEmail(), token)
-                                    .map(user -> SolicitudRevisionResponse.builder()
-                                            .monto(s.getMonto())
-                                            .plazo(s.getPlazo())
-                                            .email(s.getEmail())
-                                            .nombreUsuario(user.getName())
-                                            .tipoPrestamo(s.getTipoPrestamo().getNombre())
-                                            .tasaInteres(s.getTipoPrestamo().getTasaInteres())
-                                            .estadoSolicitud(s.getEstado().getNombre())
-                                            .salarioBase(user.getBaseSalary())
-                                            .montoMensualSolicitud(calcularMontoMensual(s.getMonto(), s.getPlazo()))
-                                            .build())
-                                    .onErrorResume(ex -> Mono.empty()))
+                            .flatMap(s -> {
+                                Mono<User> userMono = userRepository.findByEmail(s.getEmail(), token);
+                                Mono<Estado> estadoMono = estadoRepository.findById(s.getEstado().getIdEstado());
+
+                                return Mono.zip(userMono, estadoMono)
+                                        .map(tuple2 -> {
+                                            User user = tuple2.getT1();
+                                            Estado estado = tuple2.getT2();
+
+                                            return SolicitudRevisionResponse.builder()
+                                                    .monto(s.getMonto())
+                                                    .plazo(s.getPlazo())
+                                                    .email(s.getEmail())
+                                                    .nombreUsuario(user.getName())
+                                                    .tipoPrestamo(s.getTipoPrestamo().getNombre())
+                                                    .tasaInteres(s.getTipoPrestamo().getTasaInteres())
+                                                    .estadoSolicitud(estado.getNombre())
+                                                    .salarioBase(user.getBaseSalary())
+                                                    .montoMensualSolicitud(
+                                                            calcularMontoMensual(s.getMonto(), s.getPlazo()))
+                                                    .build();
+                                        })
+                                        .onErrorResume(ex -> {
+                                            return Mono.empty();
+                                        });
+                            })
                             .collectList()
                             .map(items -> SolicitudPageResponse.builder()
                                     .page(page)

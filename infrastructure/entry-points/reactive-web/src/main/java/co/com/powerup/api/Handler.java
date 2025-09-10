@@ -79,11 +79,12 @@ public class Handler {
 
         int page = Integer.parseInt(request.queryParam("page").orElse("0"));
         int size = Integer.parseInt(request.queryParam("size").orElse("10"));
+        String estadoSolicitud = request.queryParam("estadoSolicitud").orElse(null);
         String tipoPrestamo = request.queryParam("tipoPrestamo").orElse(null);
         BigDecimal minMonto = request.queryParam("minMonto").map(BigDecimal::new).orElse(null);
         BigDecimal maxMonto = request.queryParam("maxMonto").map(BigDecimal::new).orElse(null);
 
-        SolicitudFilter filter = new SolicitudFilter(tipoPrestamo, minMonto, maxMonto);
+        SolicitudFilter filter = new SolicitudFilter(estadoSolicitud, tipoPrestamo, minMonto, maxMonto);
 
         return solicitudUseCase.listarSolicitudesFiltradas(token, filter, page, size)
                 .flatMap(response -> ServerResponse.ok()
