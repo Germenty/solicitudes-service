@@ -49,3 +49,12 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     url: /v3/api-docs
+
+
+# ============================
+# 🔐 JWT CONFIG
+# ============================
+security:
+  jwt:
+    secretKey: "2O3n1WlTtB2X6pJ5oQ7s8R9uC0FvGhIjKlMnOpQrStUvWxYz1234567890abcdef" # clave en Base64
+    expiration: 3600000 # 1 hora en milisegundos

@@ -8,6 +8,8 @@ dependencies {
     implementation project(':model')
     implementation project(':usecase')
     implementation project(':rest-consumer')
+    implementation project(':jwt-adapter')
+    implementation project(':security')
 
     implementation 'org.springframework.boot:spring-boot-starter'
 

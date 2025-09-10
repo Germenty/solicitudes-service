@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 import co.com.powerup.api.dto.RegisterSolicitudRequest;
 import co.com.powerup.model.solicitud.Solicitud;
+import co.com.powerup.model.solicitud.SolicitudRevisionResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,11 +28,17 @@ public class RouterRest {
                     @ApiResponse(responseCode = "201", description = "Solicitud creada exitosamente", content = @Content(schema = @Schema(implementation = Solicitud.class))),
                     @ApiResponse(responseCode = "400", description = "Datos inválidos"),
                     @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+            })),
+            @RouterOperation(path = "/api/v1/solicitud", method = RequestMethod.GET, beanClass = Handler.class, beanMethod = "listarSolicitudesFiltradas", operation = @Operation(operationId = "listarSolicitudesParaRevision", summary = "Listar solicitudes pendientes de revisión manual", responses = {
+                    @ApiResponse(responseCode = "200", description = "Listado de solicitudes", content = @Content(schema = @Schema(implementation = SolicitudRevisionResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "No autorizado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")
             }))
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route()
                 .POST("/api/v1/solicitud", handler::createSolicitud)
+                .GET("/api/v1/solicitud", handler::listarSolicitudesFiltradas)
                 .build();
     }
 }

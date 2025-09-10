@@ -1,5 +1,6 @@
 package co.com.powerup.api;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import co.com.powerup.api.dto.RegisterSolicitudRequest;
 import co.com.powerup.model.estado.Estado;
 import co.com.powerup.model.solicitud.Solicitud;
+import co.com.powerup.model.solicitud.SolicitudFilter;
 import co.com.powerup.model.tipoprestamo.TipoPrestamo;
 import co.com.powerup.usecase.solicitud.SolicitudUseCase;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +64,33 @@ public class Handler {
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(Map.of("error", ex.getMessage())))
                 .onErrorResume(RuntimeException.class, ex -> ServerResponse.status(500)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(Map.of("error", ex.getMessage())));
+    }
+
+    // GET /api/v1/solicitud
+    public Mono<ServerResponse> listarSolicitudesFiltradas(ServerRequest request) {
+        String token = request.headers().firstHeader("Authorization");
+        if (token == null || token.isBlank()) {
+            return ServerResponse.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("error", "Authorization header is required"));
+        }
+
+        int page = Integer.parseInt(request.queryParam("page").orElse("0"));
+        int size = Integer.parseInt(request.queryParam("size").orElse("10"));
+        String estadoSolicitud = request.queryParam("estadoSolicitud").orElse(null);
+        String tipoPrestamo = request.queryParam("tipoPrestamo").orElse(null);
+        BigDecimal minMonto = request.queryParam("minMonto").map(BigDecimal::new).orElse(null);
+        BigDecimal maxMonto = request.queryParam("maxMonto").map(BigDecimal::new).orElse(null);
+
+        SolicitudFilter filter = new SolicitudFilter(estadoSolicitud, tipoPrestamo, minMonto, maxMonto);
+
+        return solicitudUseCase.listarSolicitudesFiltradas(token, filter, page, size)
+                .flatMap(response -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(response))
+                .onErrorResume(ex -> ServerResponse.status(403)
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(Map.of("error", ex.getMessage())));
     }
