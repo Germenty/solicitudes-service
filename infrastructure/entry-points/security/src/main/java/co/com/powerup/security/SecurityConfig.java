@@ -54,7 +54,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.PUT, "/api/v1/solicitud/**").hasRole("ADVISOR")
 
                         // Endpoints de administración de usuarios (solo ADMIN)
-                        .pathMatchers("/api/v1/users/**").hasRole("ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/users").hasAnyRole("CLIENT", "ADVISOR", "ADMIN")
 
                         // Lo demás requiere autenticación
                         .anyExchange().authenticated())
