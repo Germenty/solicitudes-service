@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
@@ -34,8 +35,7 @@ public class SecurityConfig {
                 .authenticationManager(jwtAuthenticationManager)
                 .securityContextRepository(jwtSecurityContextRepository)
                 .authorizeExchange(exchanges -> exchanges
-                        // Endpoints públicos
-                        .pathMatchers("/api/v1/login").permitAll()
+                        // Swagger público
                         .pathMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -44,9 +44,17 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
 
-                        // Endpoints protegidos por rol
-                        .pathMatchers("/api/v1/users").hasRole("ADMIN") // Crear usuario
-                        .pathMatchers("/api/v1/users/**").hasRole("CLIENT") // Consultar por email
+                        // HU2: Registrar solicitud (solo CLIENT)
+                        .pathMatchers(HttpMethod.POST, "/api/v1/solicitud").hasRole("CLIENT")
+
+                        // HU4: Listar solicitudes (solo ADVISOR)
+                        .pathMatchers(HttpMethod.GET, "/api/v1/solicitud").hasRole("ADVISOR")
+
+                        // HU6: Aprobar/Rechazar solicitud (solo ADVISOR)
+                        .pathMatchers(HttpMethod.PUT, "/api/v1/solicitud/**").hasRole("ADVISOR")
+
+                        // Endpoints de administración de usuarios (solo ADMIN)
+                        .pathMatchers("/api/v1/users/**").hasRole("ADMIN")
 
                         // Lo demás requiere autenticación
                         .anyExchange().authenticated())
